@@ -17,8 +17,8 @@ ascent! {
 
     // ── Nodes ──
     // Every AST item: domain, struct, trait, impl, method, const, main, type_alias
-    relation Node(i64, String, String, Option<i64>, usize, usize);
-    // (id, kind, name, parent_id, span_start, span_end)
+    relation Node(i64, String, String, Option<i64>, usize, usize, Option<i64>);
+    // (id, kind, name, parent_id, span_start, span_end, scope_id)
 
     // ── Domains ──
     relation Variant(i64, i64, String, Option<String>);
@@ -35,6 +35,23 @@ ascent! {
 
     relation Returns(i64, String);
     // (method_id, type_ref)
+
+    // ── Scope boundary — modules, traits, methods, blocks ──
+    relation Scope(i64, String, String, Option<i64>);
+    // (id, kind, name, parent_scope_id)
+    // kind: "module", "trait", "method", "block"
+
+    // ── Trait inheritance ──
+    relation Supertrait(i64, String);
+    // (trait_node_id, supertrait_name)
+
+    // ── Module exports ──
+    relation Export(i64, String);
+    // (scope_id, exported_name)
+
+    // ── Module imports ──
+    relation Import(i64, String, String);
+    // (scope_id, source_module, imported_name)
 
     // ── Trait system ──
     relation TraitImpl(String, String, i64);
@@ -58,13 +75,13 @@ ascent! {
 
     // Auto-derive from struct fields
     ContainedType(parent_type, field_type) <--
-        Node(parent_id, kind, parent_type, _, _, _),
+        Node(parent_id, kind, parent_type, _, _, _, _),
         if kind == "struct",
         Field(*parent_id, _, _, field_type);
 
     // Auto-derive from domain variant wraps
     ContainedType(parent_type, field_type.clone()) <--
-        Node(parent_id, kind, parent_type, _, _, _),
+        Node(parent_id, kind, parent_type, _, _, _, _),
         if kind == "domain",
         Variant(*parent_id, _, _, wraps),
         if wraps.is_some(),
@@ -147,8 +164,8 @@ pub fn run_rules(world: &mut World) {
 /// All top-level nodes ordered by id.
 pub fn query_all_top_level_nodes(world: &World) -> Vec<(i64, String, String)> {
     let mut nodes: Vec<_> = world.Node.iter()
-        .filter(|(_, _, _, parent, _, _)| parent.is_none())
-        .map(|(id, kind, name, _, _, _)| (*id, kind.clone(), name.clone()))
+        .filter(|(_, _, _, parent, _, _, _)| parent.is_none())
+        .map(|(id, kind, name, _, _, _, _)| (*id, kind.clone(), name.clone()))
         .collect();
     nodes.sort_by_key(|(id, _, _)| *id);
     nodes
@@ -157,8 +174,8 @@ pub fn query_all_top_level_nodes(world: &World) -> Vec<(i64, String, String)> {
 /// Child nodes of a parent, ordered by id.
 pub fn query_child_nodes(world: &World, parent_id: i64) -> Vec<(i64, String, String)> {
     let mut nodes: Vec<_> = world.Node.iter()
-        .filter(|(_, _, _, parent, _, _)| *parent == Some(parent_id))
-        .map(|(id, kind, name, _, _, _)| (*id, kind.clone(), name.clone()))
+        .filter(|(_, _, _, parent, _, _, _)| *parent == Some(parent_id))
+        .map(|(id, kind, name, _, _, _, _)| (*id, kind.clone(), name.clone()))
         .collect();
     nodes.sort_by_key(|(id, _, _)| *id);
     nodes
@@ -167,8 +184,8 @@ pub fn query_child_nodes(world: &World, parent_id: i64) -> Vec<(i64, String, Str
 /// Domain variants ordered by ordinal.
 pub fn query_domain_variants(world: &World, domain_name: &str) -> Vec<(i32, String, Option<String>)> {
     let domain_id = world.Node.iter()
-        .find(|(_, kind, name, _, _, _)| kind == "domain" && name == domain_name)
-        .map(|(id, _, _, _, _, _)| *id);
+        .find(|(_, kind, name, _, _, _, _)| kind == "domain" && name == domain_name)
+        .map(|(id, _, _, _, _, _, _)| *id);
 
     let Some(did) = domain_id else { return Vec::new() };
 
@@ -183,8 +200,8 @@ pub fn query_domain_variants(world: &World, domain_name: &str) -> Vec<(i32, Stri
 /// Struct fields ordered by ordinal.
 pub fn query_struct_fields(world: &World, struct_name: &str) -> Vec<(i32, String, String)> {
     let struct_id = world.Node.iter()
-        .find(|(_, kind, name, _, _, _)| kind == "struct" && name == struct_name)
-        .map(|(id, _, _, _, _, _)| *id);
+        .find(|(_, kind, name, _, _, _, _)| kind == "struct" && name == struct_name)
+        .map(|(id, _, _, _, _, _, _)| *id);
 
     let Some(sid) = struct_id else { return Vec::new() };
 
@@ -253,21 +270,21 @@ pub fn query_expr_by_id(world: &World, expr_id: i64) -> Option<(String, Option<S
 /// All nodes of a given kind.
 pub fn query_nodes_by_kind(world: &World, kind: &str) -> Vec<(i64, String)> {
     world.Node.iter()
-        .filter(|(_, k, _, _, _, _)| k == kind)
-        .map(|(id, _, name, _, _, _)| (*id, name.clone()))
+        .filter(|(_, k, _, _, _, _, _)| k == kind)
+        .map(|(id, _, name, _, _, _, _)| (*id, name.clone()))
         .collect()
 }
 
 /// Node kind by id.
 pub fn query_node_kind(world: &World, node_id: i64) -> Option<String> {
     world.Node.iter()
-        .find(|(id, _, _, _, _, _)| *id == node_id)
-        .map(|(_, kind, _, _, _, _)| kind.clone())
+        .find(|(id, _, _, _, _, _, _)| *id == node_id)
+        .map(|(_, kind, _, _, _, _, _)| kind.clone())
 }
 
 /// Check if a name is a known method (has a "method" or "tail_method" node).
 pub fn is_known_method(name: &str, world: &World) -> bool {
-    world.Node.iter().any(|(_, kind, n, _, _, _)| {
+    world.Node.iter().any(|(_, kind, n, _, _, _, _)| {
         (kind == "method" || kind == "tail_method" || kind == "method_sig") && n == name
     })
 }
@@ -290,7 +307,7 @@ pub fn query_recursive_fields(world: &World) -> HashSet<(String, String)> {
 /// Validate: body-scoped types should not appear in return positions.
 pub fn validate_return_type_scope(world: &World) -> Vec<(String, String)> {
     let mut violations = Vec::new();
-    for (node_id, _, name, parent, _, _) in &world.Node {
+    for (node_id, _, name, parent, _, _, _) in &world.Node {
         if parent.is_some() {
             // This is a body-scoped type — check if it appears in any returns
             for (ret_node, type_ref) in &world.Returns {
@@ -303,14 +320,22 @@ pub fn validate_return_type_scope(world: &World) -> Vec<(String, String)> {
     violations
 }
 
+/// Supertraits of a trait.
+pub fn query_supertraits(world: &World, trait_id: i64) -> Vec<String> {
+    world.Supertrait.iter()
+        .filter(|(id, _)| *id == trait_id)
+        .map(|(_, name)| name.clone())
+        .collect()
+}
+
 /// Validate: String should not appear as a struct field type.
 pub fn validate_no_string_fields(world: &World) -> Vec<(String, String)> {
     let mut violations = Vec::new();
     for (struct_id, _, field_name, type_ref) in &world.Field {
         if type_ref == "String" {
             let struct_name = world.Node.iter()
-                .find(|(id, _, _, _, _, _)| id == struct_id)
-                .map(|(_, _, name, _, _, _)| name.clone())
+                .find(|(id, _, _, _, _, _, _)| id == struct_id)
+                .map(|(_, _, name, _, _, _, _)| name.clone())
                 .unwrap_or_default();
             violations.push((struct_name, field_name.clone()));
         }
@@ -325,8 +350,8 @@ mod tests {
     #[test]
     fn recursive_type_detection() {
         let mut world = World::default();
-        world.Node.push((1, "struct".into(), "Tree".into(), None, 0, 0));
-        world.Node.push((2, "struct".into(), "Branch".into(), None, 0, 0));
+        world.Node.push((1, "struct".into(), "Tree".into(), None, 0, 0, None));
+        world.Node.push((2, "struct".into(), "Branch".into(), None, 0, 0, None));
         world.Field.push((1, 0, "children".into(), "Branch".into()));
         world.Field.push((2, 0, "subtree".into(), "Tree".into()));
         run_rules(&mut world);
@@ -338,9 +363,9 @@ mod tests {
     #[test]
     fn linear_containment_no_cycle() {
         let mut world = World::default();
-        world.Node.push((1, "struct".into(), "A".into(), None, 0, 0));
-        world.Node.push((2, "struct".into(), "B".into(), None, 0, 0));
-        world.Node.push((3, "struct".into(), "C".into(), None, 0, 0));
+        world.Node.push((1, "struct".into(), "A".into(), None, 0, 0, None));
+        world.Node.push((2, "struct".into(), "B".into(), None, 0, 0, None));
+        world.Node.push((3, "struct".into(), "C".into(), None, 0, 0, None));
         world.Field.push((1, 0, "b".into(), "B".into()));
         world.Field.push((2, 0, "c".into(), "C".into()));
         run_rules(&mut world);
@@ -351,9 +376,9 @@ mod tests {
     #[test]
     fn query_top_level() {
         let mut world = World::default();
-        world.Node.push((1, "domain".into(), "Element".into(), None, 0, 10));
-        world.Node.push((2, "struct".into(), "Point".into(), None, 11, 20));
-        world.Node.push((3, "method".into(), "distance".into(), Some(2), 21, 30));
+        world.Node.push((1, "domain".into(), "Element".into(), None, 0, 10, None));
+        world.Node.push((2, "struct".into(), "Point".into(), None, 11, 20, None));
+        world.Node.push((3, "method".into(), "distance".into(), Some(2), 21, 30, None));
         let top = query_all_top_level_nodes(&world);
         assert_eq!(top.len(), 2);
         assert_eq!(top[0].2, "Element");
