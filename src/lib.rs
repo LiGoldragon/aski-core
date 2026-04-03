@@ -69,6 +69,13 @@ ascent! {
     relation MatchArm(i64, i64, String, Option<i64>, String);
     // (match_id, ordinal, patterns_json, body_expr_id, arm_kind)
 
+    // ── Grammar rules (Surface → Kernel macro expansion) ──
+    relation GrammarRule(i64, String);
+    // (node_id, rule_name)
+
+    relation GrammarArm(i64, i64, String, String);
+    // (rule_id, ordinal, pattern_json, result_json)
+
     // ── Derived: type containment ──
     relation ContainedType(String, String);
     // (parent_type, child_type) — immediate containment
