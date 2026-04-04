@@ -294,6 +294,33 @@ pub fn query_methods_on_type(world: &World, type_name: &str) -> Vec<(String, i64
         .collect()
 }
 
+/// Is this trait impl an operator trait? Returns (rust_import, output_type).
+pub fn query_operator_impl(world: &World, trait_name: &str, type_name: &str) -> Option<(String, String)> {
+    world.operator_impls.iter()
+        .find(|o| o.trait_name == trait_name && o.type_name == type_name)
+        .map(|o| (o.rust_import.clone(), o.output_type.clone()))
+}
+
+/// All operator trait impls.
+pub fn query_all_operator_impls(world: &World) -> Vec<(String, String, String)> {
+    world.operator_impls.iter()
+        .map(|o| (o.trait_name.clone(), o.type_name.clone(), o.rust_import.clone()))
+        .collect()
+}
+
+/// Is this field recursive (needs Box<T>)?
+pub fn is_recursive_field(world: &World, struct_name: &str, field_name: &str) -> bool {
+    world.recursive_fields.iter()
+        .any(|r| r.struct_name == struct_name && r.field_name == field_name)
+}
+
+/// Mutable binding info for an expression.
+pub fn query_mutable_binding(world: &World, expr_id: i64) -> Option<(String, String)> {
+    world.mutable_bindings.iter()
+        .find(|m| m.expr_id == expr_id)
+        .map(|m| (m.var_name.clone(), m.type_name.clone()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -214,6 +214,24 @@ RecursiveType {
   ChildType String
 }
 
+OperatorImpl {
+  TraitName String
+  TypeName String
+  RustImport String
+  OutputType String
+}
+
+RecursiveField {
+  StructName String
+  FieldName String
+}
+
+MutableBinding {
+  ExprId I64
+  VarName String
+  TypeName String
+}
+
 ;; ════════════════════════════════════════════════
 ;; World — holds all relations
 ;; ════════════════════════════════════════════════
@@ -244,6 +262,9 @@ World {
   MethodOnTypes Vec{MethodOnType}
   ContainedTypes Vec{ContainedType}
   RecursiveTypes Vec{RecursiveType}
+  OperatorImpls Vec{OperatorImpl}
+  RecursiveFields Vec{RecursiveField}
+  MutableBindings Vec{MutableBinding}
 }
 
 ;; ════════════════════════════════════════════════
@@ -265,6 +286,9 @@ derive ([
   deriveBindingInfo(~@Self)
   deriveMethodOnType(~@Self)
   deriveContainedType(~@Self)
+  deriveOperatorImpl(~@Self)
+  deriveRecursiveField(~@Self)
+  deriveMutableBinding(~@Self)
   deriveQualifiedNames(~@Self)
   deriveCanSee(~@Self)
   deriveRecursiveType(~@Self)
@@ -279,9 +303,12 @@ derive [World [
     ~@Self.deriveBindingInfo
     ~@Self.deriveMethodOnType
     ~@Self.deriveContainedType
+    ~@Self.deriveOperatorImpl
+    ~@Self.deriveMutableBinding
     ~@Self.deriveQualifiedNames
     ~@Self.deriveCanSee
     ~@Self.deriveRecursiveType
+    ~@Self.deriveRecursiveField
   ]
 
   ;; ── VariantOf ──
@@ -354,6 +381,56 @@ derive [World [
             .filter(@Variant.DomainId == @Node.Id)
             .filter(@Variant.WrapsType != "")
             .map(ContainedType(ParentType(@Node.Name) ChildType(@Variant.WrapsType))))))
+  ]
+
+  ;; ── OperatorImpl ──
+  ;; Detect trait impls for operator traits (add, sub, mul, div, rem, neg, not, index).
+  ;; Maps to std::ops import and infers Output type from the first method's return.
+  deriveOperatorImpl(~@Self) [
+    ~@Self.OperatorImpls.set(
+      @Self.TraitImpls
+        .filter(@TraitImpl.TraitName == "add" || @TraitImpl.TraitName == "sub"
+             || @TraitImpl.TraitName == "mul" || @TraitImpl.TraitName == "div"
+             || @TraitImpl.TraitName == "rem" || @TraitImpl.TraitName == "neg"
+             || @TraitImpl.TraitName == "not" || @TraitImpl.TraitName == "index")
+        .map(OperatorImpl(
+          TraitName(@TraitImpl.TraitName)
+          TypeName(@TraitImpl.TypeName)
+          RustImport(@TraitImpl.TraitName)
+          OutputType(@TraitImpl.TypeName))))
+  ]
+
+  ;; ── RecursiveField ──
+  ;; Fields whose type recursively contains the parent struct (need Box<T>).
+  deriveRecursiveField(~@Self) [
+    ~@Self.RecursiveFields.set(
+      @Self.Nodes.filter(@Node.Kind == Struct)
+        .flatMap(@Self.Fields.filter(@Field.StructId == @Node.Id)
+          .flatMap(@Self.RecursiveTypes
+            .filter(@Reach.ParentType == @Node.Name)
+            .filter(@Reach.ChildType == @Node.Name)
+            .map(RecursiveField(
+              StructName(@Node.Name)
+              FieldName(@Field.Name))))))
+  ]
+
+  ;; ── MutableBinding ──
+  ;; MutableNew and MutableSet exprs → binding info for mut variables.
+  deriveMutableBinding(~@Self) [
+    ~@Self.MutableBindings.set(
+      @Self.Exprs.filter(@Expr.Kind == MutableNew)
+        .filter(@Expr.Value.contains(":"))
+        .map(MutableBinding(
+          ExprId(@Expr.Id)
+          VarName(@Expr.Value.beforeColon)
+          TypeName(@Expr.Value.afterColon)))
+      .chain(
+        @Self.Exprs.filter(@Expr.Kind == MutableNew)
+          .filter(@Expr.Value.contains(":") == False)
+          .map(MutableBinding(
+            ExprId(@Expr.Id)
+            VarName(@Expr.Value)
+            TypeName(@Expr.Value)))))
   ]
 
   ;; ── QualifiedName (fixed-point) ──

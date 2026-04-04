@@ -521,6 +521,27 @@ pub struct RecursiveType {
     pub child_type: String,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct OperatorImpl {
+    pub trait_name: String,
+    pub type_name: String,
+    pub rust_import: String,
+    pub output_type: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct RecursiveField {
+    pub struct_name: String,
+    pub field_name: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MutableBinding {
+    pub expr_id: i64,
+    pub var_name: String,
+    pub type_name: String,
+}
+
 /// Kernel World — holds all relations as Vec<T>.
 #[derive(Debug, Clone, Default)]
 pub struct World {
@@ -547,6 +568,9 @@ pub struct World {
     pub method_on_types: Vec<MethodOnType>,
     pub contained_types: Vec<ContainedType>,
     pub recursive_types: Vec<RecursiveType>,
+    pub operator_impls: Vec<OperatorImpl>,
+    pub recursive_fields: Vec<RecursiveField>,
+    pub mutable_bindings: Vec<MutableBinding>,
 }
 
 impl World {
@@ -852,6 +876,42 @@ impl World {
         self.recursive_types.iter().filter(|r| r.child_type == val).collect()
     }
 
+    pub fn operator_impl_by_trait_name(&self, val: &str) -> Vec<&OperatorImpl> {
+        self.operator_impls.iter().filter(|r| r.trait_name == val).collect()
+    }
+
+    pub fn operator_impl_by_type_name(&self, val: &str) -> Vec<&OperatorImpl> {
+        self.operator_impls.iter().filter(|r| r.type_name == val).collect()
+    }
+
+    pub fn operator_impl_by_rust_import(&self, val: &str) -> Vec<&OperatorImpl> {
+        self.operator_impls.iter().filter(|r| r.rust_import == val).collect()
+    }
+
+    pub fn operator_impl_by_output_type(&self, val: &str) -> Vec<&OperatorImpl> {
+        self.operator_impls.iter().filter(|r| r.output_type == val).collect()
+    }
+
+    pub fn recursive_field_by_struct_name(&self, val: &str) -> Vec<&RecursiveField> {
+        self.recursive_fields.iter().filter(|r| r.struct_name == val).collect()
+    }
+
+    pub fn recursive_field_by_field_name(&self, val: &str) -> Vec<&RecursiveField> {
+        self.recursive_fields.iter().filter(|r| r.field_name == val).collect()
+    }
+
+    pub fn mutable_binding_by_expr_id(&self, val: i64) -> Vec<&MutableBinding> {
+        self.mutable_bindings.iter().filter(|r| r.expr_id == val).collect()
+    }
+
+    pub fn mutable_binding_by_var_name(&self, val: &str) -> Vec<&MutableBinding> {
+        self.mutable_bindings.iter().filter(|r| r.var_name == val).collect()
+    }
+
+    pub fn mutable_binding_by_type_name(&self, val: &str) -> Vec<&MutableBinding> {
+        self.mutable_bindings.iter().filter(|r| r.type_name == val).collect()
+    }
+
     /// Run all derivation rules to fixed point.
     pub fn derive(&mut self) {
         self.derive_variant_of();
@@ -859,9 +919,12 @@ impl World {
         self.derive_binding_info();
         self.derive_method_on_type();
         self.derive_contained_type();
+        self.derive_operator_impl();
+        self.derive_mutable_binding();
         self.derive_qualified_names_fixpoint();
         self.derive_can_see_fixpoint();
         self.derive_recursive_type_fixpoint();
+        self.derive_recursive_field();
     }
 
     fn derive_variant_of(&mut self) {
@@ -949,6 +1012,55 @@ impl World {
             }
         }
         self.contained_types = results;
+    }
+
+    fn derive_operator_impl(&mut self) {
+        let mut results = Vec::new();
+        for trait_impl in &self.trait_impls {
+            if (((((((trait_impl.trait_name == "add" || trait_impl.trait_name == "sub") || trait_impl.trait_name == "mul") || trait_impl.trait_name == "div") || trait_impl.trait_name == "rem") || trait_impl.trait_name == "neg") || trait_impl.trait_name == "not") || trait_impl.trait_name == "index") {
+                results.push(OperatorImpl { trait_name: trait_impl.trait_name.clone(), type_name: trait_impl.type_name.clone(), rust_import: trait_impl.trait_name.clone(), output_type: trait_impl.type_name.clone() });
+            }
+        }
+        self.operator_impls = results;
+    }
+
+    fn derive_recursive_field(&mut self) {
+        let mut results = Vec::new();
+        for node in &self.nodes {
+            if node.kind == NodeKind::Struct {
+                for field in &self.fields {
+                    if field.struct_id == node.id {
+                        for reach in &self.recursive_types {
+                            if reach.parent_type == node.name {
+                                if reach.child_type == node.name {
+                                    results.push(RecursiveField { struct_name: node.name.clone(), field_name: field.name.clone() });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        self.recursive_fields = results;
+    }
+
+    fn derive_mutable_binding(&mut self) {
+        let mut results = Vec::new();
+        for expr in &self.exprs {
+            if expr.kind == ExprKind::MutableNew {
+                if expr.value.contains(":") {
+                    results.push(MutableBinding { expr_id: expr.id, var_name: expr.value[..expr.value.find(':').unwrap()].to_string().clone(), type_name: expr.value[expr.value.find(':').unwrap()+1..].to_string().clone() });
+                }
+            }
+        }
+        for expr in &self.exprs {
+            if expr.kind == ExprKind::MutableNew {
+                if !expr.value.contains(":") {
+                    results.push(MutableBinding { expr_id: expr.id, var_name: expr.value.clone(), type_name: expr.value.clone() });
+                }
+            }
+        }
+        self.mutable_bindings = results;
     }
 
     fn derive_qualified_names_fixpoint(&mut self) {
