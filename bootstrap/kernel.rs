@@ -855,11 +855,10 @@ impl World {
     /// Run all derivation rules to fixed point.
     pub fn derive(&mut self) {
         self.derive_variant_of();
-        self.derive_binding_info();
         self.derive_type_kind();
+        self.derive_binding_info();
         self.derive_method_on_type();
         self.derive_contained_type();
-        // Recursive: run until stable
         self.derive_qualified_names_fixpoint();
         self.derive_can_see_fixpoint();
         self.derive_recursive_type_fixpoint();
@@ -869,13 +868,9 @@ impl World {
         let mut results = Vec::new();
         for node in &self.nodes {
             if node.kind == NodeKind::Domain {
-                for var in &self.variants {
-                    if var.domain_id == node.id {
-                        results.push(VariantOf {
-                            variant_name: var.name.clone(),
-                            domain_name: node.name.clone(),
-                            domain_node_id: node.id,
-                        });
+                for variant in &self.variants {
+                    if variant.domain_id == node.id {
+                        results.push(VariantOf { variant_name: variant.name.clone(), domain_name: node.name.clone(), domain_node_id: node.id });
                     }
                 }
             }
@@ -883,62 +878,48 @@ impl World {
         self.variant_ofs = results;
     }
 
+    fn derive_type_kind(&mut self) {
+        let mut results = Vec::new();
+        for node in &self.nodes {
+            if node.kind == NodeKind::Domain {
+                results.push(TypeKind { type_name: node.name.clone(), category: TypeCategory::Domain });
+            }
+        }
+        for node in &self.nodes {
+            if node.kind == NodeKind::Struct {
+                results.push(TypeKind { type_name: node.name.clone(), category: TypeCategory::Struct });
+            }
+        }
+        self.type_kinds = results;
+    }
+
     fn derive_binding_info(&mut self) {
         let mut results = Vec::new();
         for expr in &self.exprs {
             if expr.kind == ExprKind::SubTypeNew {
-                if expr.value.contains(':') {
-                    if let Some(colon) = expr.value.find(':') {
-                        results.push(BindingInfo {
-                            expr_id: expr.id,
-                            var_name: expr.value[..colon].to_string(),
-                            type_name: expr.value[colon+1..].to_string(),
-                        });
-                    }
+                if expr.value.contains(":") {
+                    results.push(BindingInfo { expr_id: expr.id, var_name: expr.value[..expr.value.find(':').unwrap()].to_string().clone(), type_name: expr.value[expr.value.find(':').unwrap()+1..].to_string().clone() });
                 }
-            } else if expr.kind == ExprKind::SameTypeNew {
-                if !expr.value.contains(':') {
-                    results.push(BindingInfo {
-                        expr_id: expr.id,
-                        var_name: expr.value.clone(),
-                        type_name: expr.value.clone(),
-                    });
+            }
+        }
+        for expr in &self.exprs {
+            if expr.kind == ExprKind::SameTypeNew {
+                if !expr.value.contains(":") {
+                    results.push(BindingInfo { expr_id: expr.id, var_name: expr.value.clone(), type_name: expr.value.clone() });
                 }
             }
         }
         self.binding_infos = results;
     }
 
-    fn derive_type_kind(&mut self) {
-        let mut results = Vec::new();
-        for node in &self.nodes {
-            match node.kind {
-                NodeKind::Domain => results.push(TypeKind {
-                    type_name: node.name.clone(),
-                    category: TypeCategory::Domain,
-                }),
-                NodeKind::Struct => results.push(TypeKind {
-                    type_name: node.name.clone(),
-                    category: TypeCategory::Struct,
-                }),
-                _ => {}
-            }
-        }
-        self.type_kinds = results;
-    }
-
     fn derive_method_on_type(&mut self) {
         let mut results = Vec::new();
-        for ti in &self.trait_impls {
+        for trait_impl in &self.trait_impls {
             for node in &self.nodes {
-                if (node.kind == NodeKind::Method || node.kind == NodeKind::TailMethod)
-                    && node.parent == ti.impl_node_id
-                {
-                    results.push(MethodOnType {
-                        type_name: ti.type_name.clone(),
-                        method_name: node.name.clone(),
-                        method_node_id: node.id,
-                    });
+                if (node.kind == NodeKind::Method || node.kind == NodeKind::TailMethod) {
+                    if node.parent == trait_impl.impl_node_id {
+                        results.push(MethodOnType { type_name: trait_impl.type_name.clone(), method_name: node.name.clone(), method_node_id: node.id });
+                    }
                 }
             }
         }
@@ -947,25 +928,22 @@ impl World {
 
     fn derive_contained_type(&mut self) {
         let mut results = Vec::new();
-        // From struct fields
         for node in &self.nodes {
             if node.kind == NodeKind::Struct {
                 for field in &self.fields {
                     if field.struct_id == node.id {
-                        results.push(ContainedType {
-                            parent_type: node.name.clone(),
-                            child_type: field.type_ref.clone(),
-                        });
+                        results.push(ContainedType { parent_type: node.name.clone(), child_type: field.type_ref.clone() });
                     }
                 }
             }
+        }
+        for node in &self.nodes {
             if node.kind == NodeKind::Domain {
-                for var in &self.variants {
-                    if var.domain_id == node.id && !var.wraps_type.is_empty() {
-                        results.push(ContainedType {
-                            parent_type: node.name.clone(),
-                            child_type: var.wraps_type.clone(),
-                        });
+                for variant in &self.variants {
+                    if variant.domain_id == node.id {
+                        if !variant.wraps_type.is_empty() {
+                            results.push(ContainedType { parent_type: node.name.clone(), child_type: variant.wraps_type.clone() });
+                        }
                     }
                 }
             }
@@ -974,114 +952,113 @@ impl World {
     }
 
     fn derive_qualified_names_fixpoint(&mut self) {
-        use std::collections::HashMap;
-        let mut qn: HashMap<i64, String> = HashMap::new();
-        // Top-level nodes with scope
-        for node in &self.nodes {
-            if node.parent == 0 && node.scope_id != 0 {
-                if let Some(scope) = self.scopes.iter().find(|s| s.id == node.scope_id) {
-                    qn.insert(node.id, format!("{}::{}", scope.name, node.name));
-                }
-            }
-        }
-        // Top-level nodes without scope
-        for node in &self.nodes {
-            if node.parent == 0 && node.scope_id == 0 {
-                qn.insert(node.id, node.name.clone());
-            }
-        }
-        // Fixed-point: walk parent chain
-        loop {
-            let mut changed = false;
+        {
+            let mut results = Vec::new();
             for node in &self.nodes {
-                if node.parent != 0 && !qn.contains_key(&node.id) {
-                    if let Some(parent_qn) = qn.get(&node.parent) {
-                        qn.insert(node.id, format!("{}::{}", parent_qn, node.name));
-                        changed = true;
+                if node.parent == 0 {
+                    if node.scope_id == 0 {
+                        results.push(QualifiedName { node_id: node.id, full_path: node.name.clone() });
                     }
                 }
             }
-            if !changed { break; }
+            for node in &self.nodes {
+                if node.parent == 0 {
+                    if node.scope_id != 0 {
+                        for scope in &self.scopes {
+                            if scope.id == node.scope_id {
+                                results.push(QualifiedName { node_id: node.id, full_path: format!("{}::{}", scope.name, node.name).clone() });
+                            }
+                        }
+                    }
+                }
+            }
+            self.qualified_names = results;
         }
-        self.qualified_names = qn.into_iter()
-            .map(|(id, path)| QualifiedName { node_id: id, full_path: path })
-            .collect();
+        loop {
+            let mut new_items = Vec::new();
+            for node in &self.nodes {
+                if node.parent != 0 {
+                    for qualified_name in &self.qualified_names {
+                        if qualified_name.node_id == node.parent {
+                            new_items.push(QualifiedName { node_id: node.id, full_path: format!("{}::{}", qualified_name.full_path, node.name).clone() });
+                        }
+                    }
+                }
+            }
+            new_items.retain(|item| !self.qualified_names.contains(item));
+            if new_items.is_empty() { break; }
+            self.qualified_names.extend(new_items);
+        }
     }
 
     fn derive_can_see_fixpoint(&mut self) {
-        use std::collections::HashSet;
-        let mut seen: HashSet<(i64, i64)> = HashSet::new();
-        // Self-visibility
-        for node in &self.nodes {
-            seen.insert((node.id, node.id));
-        }
-        // Siblings (same parent)
-        for a in &self.nodes {
-            for b in &self.nodes {
-                if a.parent == b.parent && a.id != b.id {
-                    seen.insert((a.id, b.id));
+        {
+            let mut results = Vec::new();
+            for node in &self.nodes {
+                results.push(CanSee { observer_id: node.id, visible_id: node.id });
+            }
+            for node in &self.nodes {
+                for other in &self.nodes {
+                    if other.parent == node.parent {
+                        if other.id != node.id {
+                            results.push(CanSee { observer_id: node.id, visible_id: other.id });
+                        }
+                    }
                 }
             }
-        }
-        // Imports
-        for node in &self.nodes {
-            if node.scope_id != 0 {
-                for imp in &self.imports {
-                    if imp.scope_id == node.scope_id {
-                        for target in &self.nodes {
-                            if target.name == imp.imported_name {
-                                seen.insert((node.id, target.id));
+            for node in &self.nodes {
+                if node.scope_id != 0 {
+                    for import in &self.imports {
+                        if import.scope_id == node.scope_id {
+                            for target in &self.nodes {
+                                if target.name == import.imported_name {
+                                    results.push(CanSee { observer_id: node.id, visible_id: target.id });
+                                }
                             }
                         }
                     }
                 }
             }
+            self.can_sees = results;
         }
-        // Fixed-point: inherited visibility from parent
         loop {
-            let mut changed = false;
-            let snapshot: Vec<(i64, i64)> = seen.iter().copied().collect();
+            let mut new_items = Vec::new();
             for node in &self.nodes {
                 if node.parent != 0 {
-                    for &(observer, visible) in &snapshot {
-                        if observer == node.parent {
-                            if seen.insert((node.id, visible)) {
-                                changed = true;
-                            }
+                    for edge in &self.can_sees {
+                        if edge.observer_id == node.parent {
+                            new_items.push(CanSee { observer_id: node.id, visible_id: edge.visible_id });
                         }
                     }
                 }
             }
-            if !changed { break; }
+            new_items.retain(|item| !self.can_sees.contains(item));
+            if new_items.is_empty() { break; }
+            self.can_sees.extend(new_items);
         }
-        self.can_sees = seen.into_iter()
-            .map(|(o, v)| CanSee { observer_id: o, visible_id: v })
-            .collect();
     }
 
     fn derive_recursive_type_fixpoint(&mut self) {
-        use std::collections::HashSet;
-        let mut reachable: HashSet<(String, String)> = HashSet::new();
-        // Base: direct containment
-        for ct in &self.contained_types {
-            reachable.insert((ct.parent_type.clone(), ct.child_type.clone()));
+        {
+            let mut results = Vec::new();
+            for contained_type in &self.contained_types {
+                results.push(RecursiveType { parent_type: contained_type.parent_type.clone(), child_type: contained_type.child_type.clone() });
+            }
+            self.recursive_types = results;
         }
-        // Transitive closure
         loop {
-            let mut changed = false;
-            let snapshot: Vec<(String, String)> = reachable.iter().cloned().collect();
-            for ct in &self.contained_types {
-                for (_, z) in snapshot.iter().filter(|(x, _)| *x == ct.child_type) {
-                    if reachable.insert((ct.parent_type.clone(), z.clone())) {
-                        changed = true;
+            let mut new_items = Vec::new();
+            for contained_type in &self.contained_types {
+                for reach in &self.recursive_types {
+                    if reach.parent_type == contained_type.child_type {
+                        new_items.push(RecursiveType { parent_type: contained_type.parent_type.clone(), child_type: reach.child_type.clone() });
                     }
                 }
             }
-            if !changed { break; }
+            new_items.retain(|item| !self.recursive_types.contains(item));
+            if new_items.is_empty() { break; }
+            self.recursive_types.extend(new_items);
         }
-        self.recursive_types = reachable.into_iter()
-            .map(|(p, c)| RecursiveType { parent_type: p, child_type: c })
-            .collect();
     }
 
 }
