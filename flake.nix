@@ -8,36 +8,32 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     crane.url = "github:ipetkov/crane";
+    aski-rs-src = {
+      url = "github:LiGoldragon/aski-rs";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, fenix, crane, ... }:
+  outputs = { self, nixpkgs, fenix, crane, aski-rs-src, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       toolchain = fenix.packages.${system}.stable.toolchain;
       craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
-      askic-bootstrap = pkgs.stdenv.mkDerivation {
-        name = "askic-bootstrap-0.4.0";
-        src = pkgs.fetchurl {
-          url = "https://github.com/LiGoldragon/aski-rs/releases/download/v0.4.0/askic-bundle-x86_64-linux.tar.gz";
-          hash = "sha256-H4DGtgUYyzVyDg7yzyu96lQkoVUknCLzseoyDypnoQU=";
-        };
-        sourceRoot = ".";
-        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-        buildInputs = [ pkgs.stdenv.cc.cc.lib ];
-        installPhase = ''
-          install -Dm755 askic $out/bin/.askic-unwrapped
-          mkdir -p $out/share/aski-grammar
-          cp -r grammar/* $out/share/aski-grammar/
-          cat > $out/bin/askic <<'WRAPPER'
-          #!/bin/sh
-          export ASKI_GRAMMAR_DIR="$(dirname "$(readlink -f "$0")")/../share/aski-grammar"
-          exec "$(dirname "$(readlink -f "$0")")/.askic-unwrapped" "$@"
-          WRAPPER
-          chmod +x $out/bin/askic
-        '';
+      askic-bin = pkgs.fetchurl {
+        url = "https://github.com/LiGoldragon/aski-rs/releases/download/v0.4.0/askic-x86_64-linux";
+        hash = "sha256-sceKlzTPIejn9gA5mVpFDSgL31/zyD5JuI4VPiAS3gQ=";
+        executable = true;
       };
+
+      # Grammar files from aski-rs source
+      aski-grammar = "${aski-rs-src}/grammar";
+
+      # Wrap askic with grammar path baked in
+      askic-wrapped = pkgs.writeShellScriptBin "askic" ''
+        exec ${askic-bin} --grammar-dir ${aski-grammar} "$@"
+      '';
 
       src = pkgs.lib.cleanSourceWith {
         src = ./.;
@@ -49,17 +45,14 @@
         inherit src;
         pname = "aski-core";
         version = "0.1.0";
-        nativeBuildInputs = [ askic-bootstrap ];
+        nativeBuildInputs = [ askic-wrapped ];
       };
       cargoArtifacts = craneLib.buildDepsOnly commonArgs;
       aski-core = craneLib.buildPackage (commonArgs // { inherit cargoArtifacts; });
     in {
-      packages.${system} = {
-        default = aski-core;
-        askic-bootstrap = askic-bootstrap;
-      };
+      packages.${system}.default = aski-core;
       devShells.${system}.default = craneLib.devShell {
-        packages = [ askic-bootstrap ];
+        packages = [ askic-wrapped ];
       };
     };
 }
