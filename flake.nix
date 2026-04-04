@@ -22,7 +22,7 @@
       craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
       askic-bin = pkgs.fetchurl {
-        url = "https://github.com/LiGoldragon/aski-rs/releases/download/v0.4.0/askic-x86_64-linux";
+        url = "https://github.com/LiGoldragon/aski-rs/releases/download/v0.4.0.1/askic-x86_64-linux";
         hash = "sha256-sceKlzTPIejn9gA5mVpFDSgL31/zyD5JuI4VPiAS3gQ=";
         executable = true;
       };
