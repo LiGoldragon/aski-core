@@ -451,9 +451,16 @@ pub struct Expr {
 pub struct MatchArm {
     pub match_id: i64,
     pub ordinal: i64,
-    pub patterns_json: String,
     pub body_expr_id: i64,
     pub kind: ArmKind,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchPattern {
+    pub match_id: i64,
+    pub arm_ordinal: i64,
+    pub pat_ordinal: i64,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -609,6 +616,7 @@ pub struct World {
     pub constants: Vec<Constant>,
     pub exprs: Vec<Expr>,
     pub match_arms: Vec<MatchArm>,
+    pub match_patterns: Vec<MatchPattern>,
     pub grammar_rules: Vec<GrammarRule>,
     pub grammar_arms: Vec<GrammarArm>,
     pub grammar_pat_elems: Vec<GrammarPatElem>,
@@ -816,16 +824,28 @@ impl World {
         self.match_arms.iter().filter(|r| r.ordinal == val).collect()
     }
 
-    pub fn match_arm_by_patterns_json(&self, val: &str) -> Vec<&MatchArm> {
-        self.match_arms.iter().filter(|r| r.patterns_json == val).collect()
-    }
-
     pub fn match_arm_by_body_expr_id(&self, val: i64) -> Vec<&MatchArm> {
         self.match_arms.iter().filter(|r| r.body_expr_id == val).collect()
     }
 
     pub fn match_arm_by_kind(&self, val: ArmKind) -> Vec<&MatchArm> {
         self.match_arms.iter().filter(|r| r.kind == val).collect()
+    }
+
+    pub fn match_pattern_by_match_id(&self, val: i64) -> Vec<&MatchPattern> {
+        self.match_patterns.iter().filter(|r| r.match_id == val).collect()
+    }
+
+    pub fn match_pattern_by_arm_ordinal(&self, val: i64) -> Vec<&MatchPattern> {
+        self.match_patterns.iter().filter(|r| r.arm_ordinal == val).collect()
+    }
+
+    pub fn match_pattern_by_pat_ordinal(&self, val: i64) -> Vec<&MatchPattern> {
+        self.match_patterns.iter().filter(|r| r.pat_ordinal == val).collect()
+    }
+
+    pub fn match_pattern_by_value(&self, val: &str) -> Vec<&MatchPattern> {
+        self.match_patterns.iter().filter(|r| r.value == val).collect()
     }
 
     pub fn grammar_rule_by_node_id(&self, val: i64) -> Vec<&GrammarRule> {

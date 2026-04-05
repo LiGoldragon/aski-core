@@ -172,9 +172,13 @@ pub fn query_match_arms(world: &World, match_id: i64) -> Vec<(i64, Vec<String>, 
     let mut arms: Vec<_> = world.match_arms.iter()
         .filter(|a| a.match_id == match_id)
         .map(|a| {
-            let patterns: Vec<String> = serde_json::from_str(&a.patterns_json).unwrap_or_default();
+            let mut patterns: Vec<_> = world.match_patterns.iter()
+                .filter(|p| p.match_id == match_id && p.arm_ordinal == a.ordinal)
+                .collect::<Vec<_>>();
+            patterns.sort_by_key(|p| p.pat_ordinal);
+            let pat_strs: Vec<String> = patterns.iter().map(|p| p.value.clone()).collect();
             let body_id = if a.body_expr_id == 0 { None } else { Some(a.body_expr_id) };
-            (a.ordinal, patterns, body_id, a.kind.to_str().to_string())
+            (a.ordinal, pat_strs, body_id, a.kind.to_str().to_string())
         })
         .collect();
     arms.sort_by_key(|(ord, _, _, _)| *ord);
