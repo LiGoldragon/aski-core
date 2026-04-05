@@ -22,7 +22,6 @@ fn main() {
     }
 
     let output = Command::new("askic")
-        .arg("--kernel")
         .arg(&kernel_path)
         .output()
         .expect("askic not found — install the bootstrap compiler (nix develop)");
