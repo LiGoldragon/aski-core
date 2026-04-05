@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 //! aski-core — Kernel schema shared between aski-rs and aski-cc.
 //!
-//! Everything here is generated from kernel.aski by askic --kernel.
+//! Everything here is generated from kernel.aski by askic.
 //! The World struct, relation types, queries, and derivation rules
 //! are all generated — no hand-written Ascent.
 

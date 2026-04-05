@@ -293,12 +293,10 @@ World {
 ;; ════════════════════════════════════════════════
 ;;
 ;; The derive trait declares all derivation methods.
-;; askic --kernel reads the trait impl structure and
-;; generates the Rust derive methods. Method bodies
-;; below are stubs — the intended aski implementations
-;; follow in comments. When the parser supports
-;; collection traits (filter, map, flatMap, chain),
-;; the stubs will be replaced with real aski bodies.
+;; askic reads the trait impl structure and generates
+;; the Rust derive methods. Method bodies below are
+;; stubs — codegen emits the actual Rust implementations
+;; from the World relations.
 
 derive ([
   derive(~@Self)
