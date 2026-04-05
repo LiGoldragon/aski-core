@@ -1,8 +1,8 @@
 (Kernel
-  NodeKind ParamKind ArmKind ScopeKind ExprKind TypeCategory
+  NodeKind ParamKind ArmKind ScopeKind ExprKind TypeCategory PatElemKind
   Node Variant Field Param Returns Scope
   Supertrait Export Import TraitImpl Constant
-  Expr MatchArm GrammarRule GrammarArm
+  Expr MatchArm GrammarRule GrammarArm GrammarPatElem
   QualifiedName CanSee VariantOf BindingInfo TypeKind MethodOnType
   ContainedType RecursiveType
   World)
@@ -163,8 +163,21 @@ GrammarRule {
 GrammarArm {
   RuleId I64
   Ordinal I64
-  PatternJson String
-  ResultJson String
+  ResultExprId I64
+}
+
+;; ════════════════════════════════════════════════
+;; Grammar pattern element kinds
+;; ════════════════════════════════════════════════
+
+PatElemKind (Terminal NonTerminal Binding BindLit Rest)
+
+GrammarPatElem {
+  RuleId I64
+  ArmOrdinal I64
+  ElemOrdinal I64
+  Kind PatElemKind
+  Name String
 }
 
 ;; ════════════════════════════════════════════════
@@ -253,6 +266,7 @@ World {
   MatchArms Vec{MatchArm}
   GrammarRules Vec{GrammarRule}
   GrammarArms Vec{GrammarArm}
+  GrammarPatElems Vec{GrammarPatElem}
   ;; Derived relations
   QualifiedNames Vec{QualifiedName}
   CanSees Vec{CanSee}

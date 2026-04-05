@@ -466,8 +466,59 @@ pub struct GrammarRule {
 pub struct GrammarArm {
     pub rule_id: i64,
     pub ordinal: i64,
-    pub pattern_json: String,
-    pub result_json: String,
+    pub result_expr_id: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PatElemKind {
+    Terminal,
+    NonTerminal,
+    Binding,
+    BindLit,
+    Rest,
+}
+
+impl std::fmt::Display for PatElemKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl PatElemKind {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "terminal" => Some(Self::Terminal),
+            "Terminal" => Some(Self::Terminal),
+            "non_terminal" => Some(Self::NonTerminal),
+            "NonTerminal" => Some(Self::NonTerminal),
+            "binding" => Some(Self::Binding),
+            "Binding" => Some(Self::Binding),
+            "bind_lit" => Some(Self::BindLit),
+            "BindLit" => Some(Self::BindLit),
+            "rest" => Some(Self::Rest),
+            "Rest" => Some(Self::Rest),
+            _ => None,
+        }
+    }
+
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            Self::Terminal => "terminal",
+            Self::NonTerminal => "non_terminal",
+            Self::Binding => "binding",
+            Self::BindLit => "bind_lit",
+            Self::Rest => "rest",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GrammarPatElem {
+    pub rule_id: i64,
+    pub arm_ordinal: i64,
+    pub elem_ordinal: i64,
+    pub kind: PatElemKind,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -560,6 +611,7 @@ pub struct World {
     pub match_arms: Vec<MatchArm>,
     pub grammar_rules: Vec<GrammarRule>,
     pub grammar_arms: Vec<GrammarArm>,
+    pub grammar_pat_elems: Vec<GrammarPatElem>,
     pub qualified_names: Vec<QualifiedName>,
     pub can_sees: Vec<CanSee>,
     pub variant_ofs: Vec<VariantOf>,
@@ -792,12 +844,28 @@ impl World {
         self.grammar_arms.iter().filter(|r| r.ordinal == val).collect()
     }
 
-    pub fn grammar_arm_by_pattern_json(&self, val: &str) -> Vec<&GrammarArm> {
-        self.grammar_arms.iter().filter(|r| r.pattern_json == val).collect()
+    pub fn grammar_arm_by_result_expr_id(&self, val: i64) -> Vec<&GrammarArm> {
+        self.grammar_arms.iter().filter(|r| r.result_expr_id == val).collect()
     }
 
-    pub fn grammar_arm_by_result_json(&self, val: &str) -> Vec<&GrammarArm> {
-        self.grammar_arms.iter().filter(|r| r.result_json == val).collect()
+    pub fn grammar_pat_elem_by_rule_id(&self, val: i64) -> Vec<&GrammarPatElem> {
+        self.grammar_pat_elems.iter().filter(|r| r.rule_id == val).collect()
+    }
+
+    pub fn grammar_pat_elem_by_arm_ordinal(&self, val: i64) -> Vec<&GrammarPatElem> {
+        self.grammar_pat_elems.iter().filter(|r| r.arm_ordinal == val).collect()
+    }
+
+    pub fn grammar_pat_elem_by_elem_ordinal(&self, val: i64) -> Vec<&GrammarPatElem> {
+        self.grammar_pat_elems.iter().filter(|r| r.elem_ordinal == val).collect()
+    }
+
+    pub fn grammar_pat_elem_by_kind(&self, val: PatElemKind) -> Vec<&GrammarPatElem> {
+        self.grammar_pat_elems.iter().filter(|r| r.kind == val).collect()
+    }
+
+    pub fn grammar_pat_elem_by_name(&self, val: &str) -> Vec<&GrammarPatElem> {
+        self.grammar_pat_elems.iter().filter(|r| r.name == val).collect()
     }
 
     pub fn qualified_name_by_node_id(&self, val: i64) -> Vec<&QualifiedName> {
