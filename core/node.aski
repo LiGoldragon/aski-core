@@ -3,57 +3,60 @@
 ;; Every syntactic construct that produces a node in the data-tree.
 ;; Grouped by the synth dialect that defines them.
 
-{node NodeKind Node NodeValue NameRef Span}
+(node NodeKind Node NodeValue NameRef Span)
 
 ;; ── Node Kind ───────────────────────────────────────────────────
 ;; One variant per syntactic construct. Derived from the synth
 ;; dialect tree — each rule that produces a parse node = one variant.
 
 (NodeKind
-  ;; root (aski.synth)
+  ;; root (Root.synth)
   Root Module Domain TraitDecl TraitImpl Struct Const Ffi Process
 
-  ;; domain children (domain.synth)
-  Variant DataVariant StructVariant
+  ;; domain children (Domain.synth)
+  Variant DataVariant StructVariant NestedDomain NestedStruct
 
-  ;; struct children (struct.synth)
+  ;; struct children (Struct.synth)
   TypedField SelfTypedField
 
-  ;; trait (trait-decl.synth, trait-impl.synth, type-impl.synth)
+  ;; type expressions (Type.synth, TypeApplication.synth, GenericParam.synth)
+  TypeApplication TypeParam BoundedParam TypeParamRef SimpleType
+
+  ;; trait (TraitDecl.synth, TraitImpl.synth, TypeImpl.synth)
   SignatureBlock Signature TypeImpl Method
 
-  ;; params (param.synth)
+  ;; params (Param.synth)
   BorrowParam MutBorrowParam OwnedParam NamedParam
 
-  ;; body (body.synth)
+  ;; body (Body.synth)
   Block TailBlock MatchBody
 
-  ;; statement (statement.synth)
-  EarlyReturn LoopBlock Iteration MutationStmt AllocationStmt ExprStatement
+  ;; statement (Statement.synth)
+  EarlyReturn LoopBlock Iteration MutationStmt InstanceStmt ExprStatement
 
-  ;; allocation (allocation.synth)
-  TypedAlloc InitAlloc BareAlloc
+  ;; instance (Instance.synth)
+  TypedInstance InitInstance BareInstance
 
-  ;; mutation (mutation.synth)
+  ;; mutation (Mutation.synth)
   MethodMut TypeMut InitMut
 
-  ;; loop (loop.synth)
+  ;; loop (Loop.synth)
   ConditionalLoop InfiniteLoop
 
-  ;; match (match.synth)
+  ;; match (Match.synth)
   MatchArm
 
-  ;; pattern (pattern.synth)
+  ;; pattern (Pattern.synth)
   VariantBindPattern VariantPattern LiteralPattern
 
-  ;; expression operators (expr-*.synth)
+  ;; expression operators (ExprOr..ExprMul.synth)
   BinOr BinAnd BinEq BinNotEq BinLt BinGt BinLtEq BinGtEq
   BinAdd BinSub BinMul BinMod
 
-  ;; expression postfix (expr-postfix.synth)
+  ;; expression postfix (ExprPostfix.synth)
   FieldAccess MethodCall TryUnwrap
 
-  ;; expression atoms (expr-atom.synth)
+  ;; expression atoms (ExprAtom.synth)
   InstanceRef QualifiedVariant BareName
   IntLit FloatLit StringLit
   Group InlineEval MatchExpr LoopExpr StructConstruct
@@ -68,21 +71,27 @@
 
 
 ;; ── Name Reference ──────────────────────────────────────────────
-;; Discriminated union over all name domains.
+;; A reference to a name. The domain says what kind of name.
+;; The name's identity comes from the scope tree — not a global
+;; Resolution walks up the scope chain.
 
 (NameRef
-  (Type TypeName) (Variant VariantName) (Field FieldName)
-  (Trait TraitName) (Method MethodName) (Module ModuleName)
-  (Binding BindingName) (Literal StringLiteral) (Op Operator)
+  (Named NameDomain)
+  (Op Operator)
   None)
 
 
 ;; ── Source Span ─────────────────────────────────────────────────
 
-{Span Module: ModuleName Start: U32 End: U32}
+{Span (Start U32) (End U32)}
 
 
 ;; ── Node ────────────────────────────────────────────────────────
 ;; The fundamental unit of the data-tree.
 
-{Node Kind: NodeKind Name: NameRef Children: Vec<Node> Span: Span Value: NodeValue}
+{Node
+  (Kind NodeKind)
+  (Name NameRef)
+  (Children [Vec Node])
+  Span
+  (Value NodeValue)}

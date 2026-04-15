@@ -1,35 +1,48 @@
-;; scope.aski — module-level visibility
+;; scope.aski — the scope tree
 ;;
-;; Which names are visible where. Built during the first pass
-;; (askicc reads declarations), enforced during the second pass
-;; (askic parses bodies).
+;; Every syntactic construct that introduces names creates a scope.
+;; Scopes nest infinitely — recursive struct/domain definitions
+;; create arbitrarily deep scope chains. Name resolution walks up
+;; from the current scope toward root. Same name in different
+;; scopes = different things, no collision.
 
-{scope ScopeGraph ModuleScope ModuleImport DeclaredName TypeForm}
+(scope ScopeKind Scope Declaration Visibility)
 
-;; ── Scope Graph ─────────────────────────────────────────────────
+;; ── Scope Kind ──────────────────────────────────────────────────
+;; What syntactic construct created this scope.
 
-{ScopeGraph Modules: Vec<ModuleScope>}
+(ScopeKind
+  Root Module
+  Domain Struct Trait TraitImpl
+  Method Block MatchArm Loop Iteration)
 
-{ModuleScope
-  Name: ModuleName
-  Path: String
-  IsMain: Bool
-  Declared: Vec<DeclaredName>
-  Exports: Vec<NameRef>
-  Imports: Vec<ModuleImport>}
+;; ── Visibility ──────────────────────────────────────────────────
+;; Whether a declared name is visible to the parent scope.
 
-{ModuleImport Source: ModuleName Names: Vec<NameRef>}
+(Visibility Exported Local)
 
+;; ── Declaration ─────────────────────────────────────────────────
+;; A name declared within a scope. The domain says what kind of
+;; name. Visibility controls whether parent/sibling scopes can
+;; see it. The name's identity comes from its position in this
+;; scope — not from a global index.
 
-;; ── Declared Names ──────────────────────────────────────────────
+{Declaration
+  (Domain NameDomain)
+  Visibility}
 
-(DeclaredName
-  {Type Name: TypeName Form: TypeForm}
-  {Variant Name: VariantName Parent: TypeName Wraps: Option<TypeName>}
-  {Field Name: FieldName Owner: TypeName FieldType: TypeName}
-  {Trait Name: TraitName Methods: Vec<MethodName>}
-  {Method Name: MethodName}
-  {Const Name: TypeName Type: TypeName}
-  {Ffi Library: TypeName Functions: Vec<MethodName>})
+;; ── Scope ───────────────────────────────────────────────────────
+;; A node in the scope tree. Contains declarations at this level
+;; and child scopes for nested constructs.
+;;
+;; Resolution: to find a name, walk up from the current scope
+;; through ancestors. First match wins (shadowing).
+;;
+;; Infinite nesting: a struct can contain a domain (| |) which
+;; contains a struct variant {} which contains another domain (| |).
+;; Each level is a Scope with children.
 
-(TypeForm Domain Struct Alias)
+{Scope
+  Kind ScopeKind
+  (Declarations [Vec Declaration])
+  (Children [Vec Scope])}

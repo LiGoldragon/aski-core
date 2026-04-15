@@ -3,23 +3,21 @@
 ;; SynthOutput is what askicc produces (first pass).
 ;; DataTree is what askic produces (second pass).
 
-{tree SynthOutput DataTree}
+(tree SynthOutput DataTree)
 
 ;; ── First Pass Output (askicc) ──────────────────────────────────
 
 {SynthOutput
-  Names: NameRegistry
-  Dialects: DialectTable
-  Scope: ScopeGraph}
+  Scope
+  (Dialects DialectTable)}
 
-{DialectTable Dialects: Vec<Dialect>}
+{DialectTable (Dialects [Vec Dialect])}
 
-{Dialect Kind: DialectKind Rules: Vec<Rule>}
+{Dialect (Kind DialectKind) (Rules [Vec Rule])}
 
 
 ;; ── Second Pass Output (askic) ──────────────────────────────────
 
 {DataTree
-  Root: Node
-  Names: NameRegistry
-  Scope: ScopeGraph}
+  (Root Node)
+  Scope}

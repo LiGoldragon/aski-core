@@ -1,37 +1,24 @@
-;; name.aski — name domains and the name registry
+;; name.aski — name domains
 ;;
-;; Every name in an aski program belongs to one of these domains.
-;; The registry interns strings into typed ordinals.
+;; Every name in an aski program belongs to a domain.
+;; The domain classifies the name's syntactic role.
+;; Names are scoped — identity comes from position in
+;; the scope tree, not from a global registry.
 
-{name TypeName VariantName FieldName TraitName MethodName
-     ModuleName BindingName StringLiteral Operator NameRegistry}
+(name NameDomain Operator)
 
 ;; ── Name Domains ────────────────────────────────────────────────
-;; Each is a typed ordinal wrapping U32.
+;; What KIND of name something is. Not where it lives (scope)
+;; or what value it holds.
 
-{TypeName Value: U32}
-{VariantName Value: U32}
-{FieldName Value: U32}
-{TraitName Value: U32}
-{MethodName Value: U32}
-{ModuleName Value: U32}
-{BindingName Value: U32}
-{StringLiteral Value: U32}
+(NameDomain
+  Type Variant Field Trait Method
+  Module Binding Literal TypeParam)
+
+;; ── Operators ───────────────────────────────────────────────────
+;; Fixed set — not interned, not scoped. The variants are exhaustive.
 
 (Operator
   Add Sub Mul Mod
   Eq NotEq Lt Gt LtEq GtEq
   And Or)
-
-
-;; ── Name Registry ───────────────────────────────────────────────
-;; One global registry for all names across all modules.
-
-{NameRegistry
-  TypeNames: Vec<String>
-  VariantNames: Vec<String>
-  FieldNames: Vec<String>
-  TraitNames: Vec<String>
-  MethodNames: Vec<String>
-  ModuleNames: Vec<String>
-  LiteralStrings: Vec<String>}
