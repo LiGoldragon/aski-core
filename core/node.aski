@@ -11,7 +11,7 @@
 
 (NodeKind
   ;; root (Root.synth)
-  Root Module Domain TraitDecl TraitImpl Struct Const Ffi Process
+  Root Module Domain TraitDecl TraitImpl Struct Const Ffi Process Newtype
 
   ;; domain children (Domain.synth)
   Variant DataVariant StructVariant NestedDomain NestedStruct
