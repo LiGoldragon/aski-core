@@ -1,0 +1,35 @@
+;; scope.aski — module-level visibility
+;;
+;; Which names are visible where. Built during the first pass
+;; (askicc reads declarations), enforced during the second pass
+;; (askic parses bodies).
+
+{scope ScopeGraph ModuleScope ModuleImport DeclaredName TypeForm}
+
+;; ── Scope Graph ─────────────────────────────────────────────────
+
+{ScopeGraph Modules: Vec<ModuleScope>}
+
+{ModuleScope
+  Name: ModuleName
+  Path: String
+  IsMain: Bool
+  Declared: Vec<DeclaredName>
+  Exports: Vec<NameRef>
+  Imports: Vec<ModuleImport>}
+
+{ModuleImport Source: ModuleName Names: Vec<NameRef>}
+
+
+;; ── Declared Names ──────────────────────────────────────────────
+
+(DeclaredName
+  {Type Name: TypeName Form: TypeForm}
+  {Variant Name: VariantName Parent: TypeName Wraps: Option<TypeName>}
+  {Field Name: FieldName Owner: TypeName FieldType: TypeName}
+  {Trait Name: TraitName Methods: Vec<MethodName>}
+  {Method Name: MethodName}
+  {Const Name: TypeName Type: TypeName}
+  {Ffi Library: TypeName Functions: Vec<MethodName>})
+
+(TypeForm Domain Struct Alias)

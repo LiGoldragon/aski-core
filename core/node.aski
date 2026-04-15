@@ -1,0 +1,88 @@
+;; node.aski — the kinds of nodes in an aski parse tree
+;;
+;; Every syntactic construct that produces a node in the data-tree.
+;; Grouped by the synth dialect that defines them.
+
+{node NodeKind Node NodeValue NameRef Span}
+
+;; ── Node Kind ───────────────────────────────────────────────────
+;; One variant per syntactic construct. Derived from the synth
+;; dialect tree — each rule that produces a parse node = one variant.
+
+(NodeKind
+  ;; root (aski.synth)
+  Root Module Domain TraitDecl TraitImpl Struct Const Ffi Process
+
+  ;; domain children (domain.synth)
+  Variant DataVariant StructVariant
+
+  ;; struct children (struct.synth)
+  TypedField SelfTypedField
+
+  ;; trait (trait-decl.synth, trait-impl.synth, type-impl.synth)
+  SignatureBlock Signature TypeImpl Method
+
+  ;; params (param.synth)
+  BorrowParam MutBorrowParam OwnedParam NamedParam
+
+  ;; body (body.synth)
+  Block TailBlock MatchBody
+
+  ;; statement (statement.synth)
+  EarlyReturn LoopBlock Iteration MutationStmt AllocationStmt ExprStatement
+
+  ;; allocation (allocation.synth)
+  TypedAlloc InitAlloc BareAlloc
+
+  ;; mutation (mutation.synth)
+  MethodMut TypeMut InitMut
+
+  ;; loop (loop.synth)
+  ConditionalLoop InfiniteLoop
+
+  ;; match (match.synth)
+  MatchArm
+
+  ;; pattern (pattern.synth)
+  VariantBindPattern VariantPattern LiteralPattern
+
+  ;; expression operators (expr-*.synth)
+  BinOr BinAnd BinEq BinNotEq BinLt BinGt BinLtEq BinGtEq
+  BinAdd BinSub BinMul BinMod
+
+  ;; expression postfix (expr-postfix.synth)
+  FieldAccess MethodCall TryUnwrap
+
+  ;; expression atoms (expr-atom.synth)
+  InstanceRef QualifiedVariant BareName
+  IntLit FloatLit StringLit
+  Group InlineEval MatchExpr LoopExpr StructConstruct
+
+  ;; meta
+  ReturnType TypeRef Export Import MatchTarget PatternBind)
+
+
+;; ── Node Value ──────────────────────────────────────────────────
+
+(NodeValue (Int I64) (Float F64) None)
+
+
+;; ── Name Reference ──────────────────────────────────────────────
+;; Discriminated union over all name domains.
+
+(NameRef
+  (Type TypeName) (Variant VariantName) (Field FieldName)
+  (Trait TraitName) (Method MethodName) (Module ModuleName)
+  (Binding BindingName) (Literal StringLiteral) (Op Operator)
+  None)
+
+
+;; ── Source Span ─────────────────────────────────────────────────
+
+{Span Module: ModuleName Start: U32 End: U32}
+
+
+;; ── Node ────────────────────────────────────────────────────────
+;; The fundamental unit of the data-tree.
+
+{Node Kind: NodeKind Name: NameRef Children: Vec<Node> Span: Span Value: NodeValue}

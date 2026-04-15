@@ -1,0 +1,14 @@
+;; dialect.aski — the kinds of synth dialects
+;;
+;; One variant per .synth file. The dialect table is indexed by this.
+
+{dialect DialectKind}
+
+(DialectKind
+  Aski Module Domain Struct
+  TraitDecl TraitImpl TypeImpl
+  Method Signature Param
+  Body Statement Loop
+  Allocation Mutation Match Pattern
+  Ffi Main Process
+  Expr ExprOr ExprAnd ExprCompare ExprAdd ExprMul ExprPostfix ExprAtom)

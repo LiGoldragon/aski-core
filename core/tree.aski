@@ -1,0 +1,25 @@
+;; tree.aski — the data-tree and synth output
+;;
+;; SynthOutput is what askicc produces (first pass).
+;; DataTree is what askic produces (second pass).
+
+{tree SynthOutput DataTree}
+
+;; ── First Pass Output (askicc) ──────────────────────────────────
+
+{SynthOutput
+  Names: NameRegistry
+  Dialects: DialectTable
+  Scope: ScopeGraph}
+
+{DialectTable Dialects: Vec<Dialect>}
+
+{Dialect Kind: DialectKind Rules: Vec<Rule>}
+
+
+;; ── Second Pass Output (askic) ──────────────────────────────────
+
+{DataTree
+  Root: Node
+  Names: NameRegistry
+  Scope: ScopeGraph}
