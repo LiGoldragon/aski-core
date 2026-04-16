@@ -30,7 +30,7 @@
 (DeclareLabel
   Module Enum Struct Type Newtype Constructor Variant Field
   Literal Self Name Binding Param Bound Export Import Const
-  Trait Method ForeignFunction Signature)
+  Ffi Trait Method ForeignFunction Signature)
 
 (LiteralToken
   At MutAt BorrowAt Dollar
