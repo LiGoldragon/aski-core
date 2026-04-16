@@ -8,10 +8,23 @@
 
 (Dialect
   DialectTree Dialect Rule Alternative Item ItemContent
-  Cardinality DelimKind DialectKind DeclareLabel LiteralToken)
+  Label Binding LabelKind Casing KeywordToken
+  Cardinality DelimKind DialectKind LiteralToken)
 
 
 ;; ── Leaf Enums (no data, Copy) ──────────────────────────────
+
+(Binding Declare Reference)
+
+(Casing Pascal Camel)
+
+(LabelKind
+  Module Enum Struct Type Newtype Constructor Variant Field
+  Literal Instance Binding Param Bound Const
+  Ffi Trait Method ForeignFunction Signature Unknown
+  ObjectExport ActionExport ObjectImport ActionImport)
+
+(KeywordToken Self Main)
 
 (Cardinality One ZeroOrMore OneOrMore Optional)
 
@@ -27,11 +40,6 @@
   Match Pattern Loop Process
   StructConstruct Ffi)
 
-(DeclareLabel
-  Module Enum Struct Type Newtype Constructor Variant Field
-  Literal Self Name Binding Param Bound Export Import Const
-  Ffi Trait Method ForeignFunction Signature)
-
 (LiteralToken
   At MutAt BorrowAt Dollar
   Star Plus Question Ampersand
@@ -42,15 +50,21 @@
   InlineOr Colon Pipe)
 
 
+;; ── Label (3 bytes: binding + kind + casing) ────────────────
+
+{Label (Binding Binding) (Kind LabelKind) (Casing Casing)}
+
+
 ;; ── Composite Types ─────────────────────────────────────────
 
 {Item (Content ItemContent) (Adjacent Bool)}
 
 (ItemContent
-  {Declare (Label DeclareLabel)}
+  {Named (Label Label)}
   {DialectRef (Target DialectKind)}
   {Delimited (Kind DelimKind) (Inner [Vec Item])}
   {Literal (Token LiteralToken)}
+  {Keyword (Token KeywordToken)}
   {Repeat (Kind Cardinality) (Inner [Box Item])}
   LiteralValue)
 
