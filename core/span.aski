@@ -1,0 +1,5 @@
+;; span.aski — source position
+
+(Span Span)
+
+{Span (Start U32) (End U32)}

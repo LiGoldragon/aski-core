@@ -1,49 +1,15 @@
-;; scope.aski — the scope tree
+;; scope.aski — scope classification
 ;;
 ;; Every syntactic construct that introduces names creates a scope.
 ;; All three domain forms (enum, struct, newtype) create scopes.
-;; Scopes nest infinitely — recursive definitions via (| |) and
-;; {| |} create arbitrarily deep scope chains. Name resolution
-;; walks up from the current scope toward root. Same name in
-;; different scopes = different things, no collision.
+;; Scopes nest infinitely. Name resolution walks up from the
+;; current scope toward root. First match wins (shadowing).
 
-(Scope ScopeKind Scope Declaration Visibility)
-
-;; ── Scope Kind ──────────────────────────────────────────────────
-;; What syntactic construct created this scope.
+(Scope ScopeKind Visibility)
 
 (ScopeKind
   Root Module
   Enum Struct Newtype Trait TraitImpl
   Method Block MatchArm Loop Iteration)
 
-;; ── Visibility ──────────────────────────────────────────────────
-;; Whether a declared name is visible to the parent scope.
-
 (Visibility Exported Local)
-
-;; ── Declaration ─────────────────────────────────────────────────
-;; A name declared within a scope. NameDomain says what kind of
-;; name. Visibility controls whether parent/sibling scopes can
-;; see it. The name's identity comes from its position in this
-;; scope — not from a global index.
-
-{Declaration
-  (NameDomain NameDomain)
-  Visibility}
-
-;; ── Scope ───────────────────────────────────────────────────────
-;; A node in the scope tree. Contains declarations at this level
-;; and child scopes for nested constructs.
-;;
-;; Resolution: to find a name, walk up from the current scope
-;; through ancestors. First match wins (shadowing).
-;;
-;; Infinite nesting: a struct can contain an enum (| |) which
-;; contains a struct variant {} which contains another enum (| |).
-;; Each level is a Scope with children.
-
-{Scope
-  Kind ScopeKind
-  (Declarations [Vec Declaration])
-  (Children [Vec Scope])}

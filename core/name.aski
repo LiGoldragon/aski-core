@@ -2,21 +2,12 @@
 ;;
 ;; Every name in an aski program belongs to a NameDomain —
 ;; the classification of its syntactic role.
-;; Names are scoped — identity comes from position in
-;; the scope tree, not from a global registry.
 
 (Name NameDomain Operator)
-
-;; ── Name Domains ────────────────────────────────────────────────
-;; What KIND of name something is. Not where it lives (scope)
-;; or what value it holds.
 
 (NameDomain
   Type Variant Field Trait Method
   Module Literal TypeParam)
-
-;; ── Operators ───────────────────────────────────────────────────
-;; Fixed set — not interned, not scoped. The variants are exhaustive.
 
 (Operator
   Add Sub Mul Mod
