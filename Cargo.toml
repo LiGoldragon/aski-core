@@ -3,8 +3,14 @@ name = "aski-core"
 version = "0.17.0"
 edition = "2021"
 authors = ["Li Goldragon <li@goldragon.criome.net>"]
-description = "The anatomy of aski — classification domains + cc (core compiler)"
+description = "aski-core — rkyv contract types for askicc↔askic"
 
-[[bin]]
-name = "cc"
-path = "src/main.rs"
+[lib]
+name = "aski_core"
+path = "src/lib.rs"
+
+[dependencies]
+rkyv = { version = "0.8", default-features = false, features = [
+    "little_endian",
+    "alloc",
+] }

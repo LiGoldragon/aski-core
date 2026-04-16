@@ -1,41 +1,46 @@
-# aski-core — The Anatomy of Aski + cc
+# aski-core — rkyv Contract (askicc↔askic)
 
-Sema is the thing. Aski is one text notation for specifying
-sema. aski-core defines the anatomy of the aski notation and
-contains cc (the bootstrap core compiler).
+aski-core defines every type that appears in the rkyv message
+between askicc and askic. corec generates Rust with rkyv
+derives from the .aski definitions. Both askicc (serializer)
+and askic (deserializer) depend on aski-core as a Cargo crate
+via flake-crates/.
 
-## .aski Anatomy Files
+## .aski Definitions
 
-Declarative definitions of aski's structure:
-- `core/node.aski` — NodeKind, Node, NameRef, Span
 - `core/name.aski` — NameDomain, Operator
-- `core/scope.aski` — ScopeKind, Scope, Declaration, Visibility
+- `core/scope.aski` — ScopeKind, Visibility
+- `core/span.aski` — Span
+- `core/dialect.aski` — Dialect, Rule, Alternative, Item,
+  ItemContent, Cardinality, Casing, DelimKind
 
-These are the source of truth. Writing a domain in Rust
-instead of defining it in .aski is always wrong.
+Still missing: DialectKind, Sigil.
 
-Domain = any data definition (enum + struct + newtype).
-
-## cc — Core Compiler (crate)
-
-A minimal hardcoded Rust parser that reads the .aski anatomy
-files and generates Rust types (NodeKind, NameDomain, etc.).
-
-cc solves the bootstrap problem: .aski files aren't self-
-compiling. cc turns them into Rust. Once the engine can
-compile aski, cc is replaced by the engine's own parser.
-
-cc's output is used by both askicc and askic.
-
-## The Two Compilers
+## How It Works
 
 ```
-askic (frontend)   .aski → .sema    contains cc + askicc
-semac (backend)    .sema → .rs      independent, no aski knowledge
+core/*.aski → corec → generated/aski_core.rs → lib.rs includes it
 ```
 
-Sema is the center. askic is one frontend. semac is the
-permanent backend.
+src/lib.rs does `include!("../generated/aski_core.rs")`.
+Run `corec core generated/aski_core.rs` to regenerate locally.
+In nix, the flake runs corec automatically.
+
+## The Pipeline
+
+```
+corec       — .aski → Rust with rkyv derives (the tool)
+aski-core   — grammar .aski + corec → Rust rkyv types (this repo)
+sema-core   — parse tree .aski + corec → Rust rkyv types
+askicc      — uses aski-core types → rkyv dialect-data-tree
+askic       — uses aski-core (input) + sema-core (output)
+semac       — uses sema-core types only
+```
+
+## Rust Style
+
+**No free functions — methods on types always.** `main` is
+the only exception.
 
 ## VCS
 
