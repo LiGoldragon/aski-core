@@ -1,32 +1,42 @@
-# aski-core — The Anatomy of Aski
+# aski-core — The Anatomy of Aski + cc
 
-The .aski definitions that describe the structure of aski code itself.
-Domains, structs, and traits that name every kind of construct in the
-aski language. Pure data — no implementation logic.
+Sema is the thing. Aski is one text notation for specifying
+sema. aski-core defines the anatomy of the aski notation and
+contains cc (the bootstrap core compiler).
 
-## What This Is
+## .aski Anatomy Files
 
-aski-core defines the **anatomy** of the aski language: what types,
-domains, structs, and traits exist in the compiler's data model.
-These .aski files are the source of truth for:
+Declarative definitions of aski's structure:
+- `core/node.aski` — NodeKind, Node, NameRef, Span
+- `core/name.aski` — NameDomain, Operator
+- `core/scope.aski` — ScopeKind, Scope, Declaration, Visibility
 
-- **askicc** — reads these definitions to build its data-tree and
-  derive enums from the discovered names
-- **askic** — knows what types it's working with
+These are the source of truth. Writing a domain in Rust
+instead of defining it in .aski is always wrong.
 
-No Rust code, no parser logic. Just the declarative skeleton of
-the language.
+Domain = any data definition (enum + struct + newtype).
+Never means just "enum."
 
-## The Sema Engine
+## cc — Core Compiler (crate)
 
-The sema engine is the 3-compiler pipeline:
-- **askicc** reads .synth grammar + aski-core definitions → data-tree
-- **askic** uses the data-tree to parse .aski programs → typed parse tree
-- **semac** walks the parse tree → .sema binary + codegen
+A minimal hardcoded Rust parser that reads the .aski anatomy
+files and generates Rust types (NodeKind, NameDomain, etc.).
 
-We are building the **bootstrap sema engine** in Rust. When the
-engine can compile aski, all Rust will be rewritten in aski —
-the **self-hosted sema engine**.
+cc solves the bootstrap problem: .aski files aren't self-
+compiling. cc turns them into Rust. Once the engine can
+compile aski, cc is replaced by the engine's own parser.
+
+cc's output is used by both askicc and askic.
+
+## The Two Compilers
+
+```
+askic (frontend)   .aski → .sema    contains cc + askicc
+semac (backend)    .sema → .rs      independent, no aski knowledge
+```
+
+Sema is the center. askic is one frontend. semac is the
+permanent backend.
 
 ## VCS
 
