@@ -13,7 +13,7 @@
 
 (NameDomain
   Type Variant Field Trait Method
-  Module Binding Literal TypeParam)
+  Module Literal TypeParam)
 
 ;; ── Operators ───────────────────────────────────────────────────
 ;; Fixed set — not interned, not scoped. The variants are exhaustive.
