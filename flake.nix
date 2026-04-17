@@ -1,5 +1,5 @@
 {
-  description = "aski-core — rkyv contract types for askicc↔askic";
+  description = "synth-core — rkyv contract types for askicc↔askic (grammar types)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -31,11 +31,10 @@
           src = ./.;
           filter = path: type:
             (craneLib.filterCargoSources path type)
-            || (builtins.match ".*\\.aski$" path != null);
+            || (builtins.match ".*\\.core$" path != null);
         };
 
-        # Run corec on core/*.dom → generated/aski_core.rs
-        generated = pkgs.runCommand "aski-core-generated" {
+        generated = pkgs.runCommand "synth-core-generated" {
           nativeBuildInputs = [ corec-bin ];
         } ''
           mkdir -p generated
@@ -44,45 +43,40 @@
           cp generated/aski_core.rs $out/
         '';
 
-        # Full source tree with generated types in place.
-        # Downstream crates depend on this via flake-crates/aski-core.
-        aski-core-source = pkgs.runCommand "aski-core-source" {} ''
+        synth-core-source = pkgs.runCommand "synth-core-source" {} ''
           cp -r ${src} $out
           chmod -R +w $out
           mkdir -p $out/generated
           cp ${generated}/aski_core.rs $out/generated/
         '';
 
-        # Build the lib crate (verifies the generated types compile)
         commonArgs = {
-          src = aski-core-source;
-          pname = "aski-core";
+          src = synth-core-source;
+          pname = "synth-core";
           version = "0.17.0";
         };
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-        aski-core-lib = craneLib.buildPackage (commonArgs // {
+        synth-core-lib = craneLib.buildPackage (commonArgs // {
           inherit cargoArtifacts;
         });
 
-        # Pure data — the .aski anatomy files
-        data = pkgs.runCommand "aski-core-data" {} ''
+        data = pkgs.runCommand "synth-core-data" {} ''
           mkdir -p $out
-          cp ${./core}/*.dom $out/
+          cp ${./core}/*.core $out/
         '';
 
       in {
         packages = {
-          default = aski-core-source;
-          source = aski-core-source;
-          lib = aski-core-lib;
+          default = synth-core-source;
+          source = synth-core-source;
+          lib = synth-core-lib;
           inherit generated data;
         };
 
         checks = {
-          # Verify the generated types compile
-          lib-build = aski-core-lib;
+          lib-build = synth-core-lib;
         };
 
         devShells.default = craneLib.devShell {
