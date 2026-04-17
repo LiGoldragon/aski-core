@@ -5,4 +5,4 @@
 //
 // Run `corec core generated/aski_core.rs` to regenerate.
 
-include!("../generated/aski_core.rs");
+include!("../generated/synth_core.rs");

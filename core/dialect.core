@@ -22,7 +22,10 @@
   Module Enum Struct Type Newtype Constructor Variant Field
   Literal Instance Binding Param Bound Const
   Ffi Trait Method ForeignFunction Signature Role
-  ObjectExport ActionExport ObjectImport ActionImport)
+  ObjectExport ActionExport ObjectImport ActionImport
+  BareVariant DataVariant StructVariant
+  NestedEnum NestedStruct
+  TypedField SelfTypedField)
 
 (KeywordToken Self Main)
 
