@@ -21,7 +21,7 @@
 (LabelKind
   Module Enum Struct Type Newtype Constructor Variant Field
   Literal Instance Binding Param Bound Const
-  Ffi Trait Method ForeignFunction Signature Unknown
+  Ffi Trait Method ForeignFunction Signature Role
   ObjectExport ActionExport ObjectImport ActionImport)
 
 (KeywordToken Self Main)
