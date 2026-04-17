@@ -34,7 +34,7 @@
             || (builtins.match ".*\\.aski$" path != null);
         };
 
-        # Run corec on core/*.aski → generated/aski_core.rs
+        # Run corec on core/*.dom → generated/aski_core.rs
         generated = pkgs.runCommand "aski-core-generated" {
           nativeBuildInputs = [ corec-bin ];
         } ''
@@ -69,7 +69,7 @@
         # Pure data — the .aski anatomy files
         data = pkgs.runCommand "aski-core-data" {} ''
           mkdir -p $out
-          cp ${./core}/*.aski $out/
+          cp ${./core}/*.dom $out/
         '';
 
       in {
