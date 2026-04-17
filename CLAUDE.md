@@ -31,10 +31,10 @@ In nix, the flake runs corec automatically.
 ```
 corec       — .aski → Rust with rkyv derives (the tool)
 aski-core   — grammar .aski + corec → Rust rkyv types (this repo)
-sema-core   — parse tree .aski + corec → Rust rkyv types
+aski   — parse tree .aski + corec → Rust rkyv types
 askicc      — uses aski-core types → rkyv dialect-data-tree
-askic       — uses aski-core (input) + sema-core (output)
-semac       — uses sema-core types only
+askic       — uses aski-core (input) + aski (output)
+semac       — uses aski types only
 ```
 
 ## Rust Style
