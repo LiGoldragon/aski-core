@@ -1,12 +1,12 @@
 [package]
-name = "aski-core"
+name = "synth-core"
 version = "0.17.0"
 edition = "2021"
 authors = ["Li Goldragon <li@goldragon.criome.net>"]
-description = "aski-core — rkyv contract types for askicc↔askic"
+description = "synth-core — rkyv contract types for askicc↔askic (grammar types)"
 
 [lib]
-name = "aski_core"
+name = "synth_core"
 path = "src/lib.rs"
 
 [dependencies]
