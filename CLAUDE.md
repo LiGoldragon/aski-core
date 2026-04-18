@@ -31,7 +31,7 @@ synth-core  — grammar .core + corec → Rust rkyv types (this repo)
 aski-core   — parse tree .core + corec → Rust rkyv types
 askicc      — uses synth-core types → dsls.rkyv (domain-data-tree, all 4 DSLs combined)
 askic       — uses synth-core (input) + aski-core (output)
-veric/semac — use aski-core / sema-core types
+veric/semac — use aski-core / veri-core types
 ```
 
 ## v0.18 Shape
