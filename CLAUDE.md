@@ -29,7 +29,7 @@ In nix, the flake runs corec automatically.
 corec       — .core → Rust with rkyv derives (the tool)
 synth-core  — grammar .core + corec → Rust rkyv types (this repo)
 aski-core   — parse tree .core + corec → Rust rkyv types
-askicc      — uses synth-core types → dsls.rkyv (dsl tree, all 4 DSLs combined)
+askicc      — uses synth-core types → dsls.rkyv (domain-data-tree, all 4 DSLs combined)
 askic       — uses synth-core (input) + aski-core (output)
 veric/semac — use aski-core / sema-core types
 ```

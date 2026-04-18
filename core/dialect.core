@@ -2,7 +2,7 @@
 ;;
 ;; Every type here appears in the rkyv message that askicc
 ;; produces and askic deserializes. No strings — every piece
-;; of dsl data is a typed variant.
+;; of synth data is a typed domain variant.
 ;;
 ;; v0.18:
 ;; - Four surfaces (core, aski, synth, exec).
