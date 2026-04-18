@@ -51,10 +51,10 @@
   ;; Module imports
   Import
 
-  ;; Statement variants
-  EarlyReturn WhileLoop InfiniteLoop Iteration
-  MutationStmt InstanceStmt ExprStmt LocalTypeDecl
-  TypedInstance UntypedInstance
+  ;; Statement variants (v0.19: unified LocalDecl, delimited ExprStmt, WhileLoop requires condition)
+  EarlyReturn WhileLoop Iteration
+  MutationStmt ExprStmt
+  LocalCanonical LocalTypeOnly LocalTypeInit LocalConstruct LocalBind
 
   ;; Expression variants
   InstanceRef PathVariant PathCall LiteralExpr
@@ -69,10 +69,7 @@
   FieldAccess MethodCall TryUnwrap
 
   ;; Pattern variants
-  VariantBind VariantMatch StringMatch
-
-  ;; Loop variants
-  ConditionalLoop
+  VariantBind VariantMatch VariantAlt StringMatch
 
   ;; Method-body variants
   BlockBody MatchBody LoopBody IterBody StructBody
@@ -105,14 +102,14 @@
   ModuleName EnumName StructName NewtypeName ConstName FfiName
   TraitName VariantName FieldName MethodName SigName InstanceName
 
-  ;; Short-form declarations (no "Name" suffix)
+  ;; Short-form declarations
   Type Param Binding Role Item
-  ObjectExport ActionExport ForeignFunction
+  ExportedName ForeignFunction
 
   ;; Reference labels (from :Label)
   Instance Variant Literal Bound Module Method Statement Field
   Struct Constructor
-  ObjectImport ActionImport
+  ImportedName
 
   ;; Origin / place labels (lifetime annotations)
   PlaceName
@@ -136,7 +133,7 @@
   Root Module Enum Struct Body
   Expr ExprOr ExprAnd ExprCompare ExprAdd ExprMul ExprPostfix ExprAtom
   Type TypeApplication GenericParam
-  Statement Instance Mutation
+  Statement Mutation
   Param Signature Method
   Match Pattern Loop
   IterationSource StructConstruct Ffi
