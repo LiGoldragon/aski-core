@@ -26,7 +26,7 @@
 
 ;; ── Leaf Enums (no data, Copy) ──────────────────────────────
 
-(Binding Declare Reference)
+(Binding Declare Reference Origin)
 
 (Casing Pascal Camel)
 
@@ -82,6 +82,9 @@
   ;; Misc leaf constructs
   TypeAnnotation FieldInit MatchArm FfiFunction BoundedParam CallArgs
 
+  ;; Lifetime / origin annotations (place-based, Rust-aligned)
+  PlaceRef PlacePath PlaceUnion ViewType
+
   ;; Synth meta-tags (synth surface describes itself)
   Sequential OrderedChoice
   NamedItem TaggedItem DialectRefItem DelimitedItem RepeatItem
@@ -108,6 +111,9 @@
   Struct Constructor
   ObjectImport ActionImport
 
+  ;; Origin / place labels (lifetime annotations)
+  PlaceName
+
   ;; Synth-meta labels (synth surface describes itself)
   LabelName TagName DialectName)
 
@@ -131,6 +137,7 @@
   Param Signature Method
   Match Pattern Loop
   IterationSource StructConstruct Ffi
+  Origin FieldPath ViewType
   Program
   SynthRule SynthAlt SynthItem SynthLabel SynthCard)
 
@@ -138,7 +145,7 @@
 ;; ── LiteralToken — source-level terminal symbols ────────────
 
 (LiteralToken
-  At MutAt BorrowAt Dollar
+  At Tilde Dollar
   Star Plus Question Ampersand
   Caret Dot Slash
   LogicalOr LogicalAnd
