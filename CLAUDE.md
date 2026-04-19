@@ -34,7 +34,7 @@ askic       — uses synth-core (input) + aski-core (output)
 veric/semac — use aski-core / veri-core types
 ```
 
-## v0.18 Shape
+## v0.19 Shape
 
 - `SurfaceKind` — Core, Aski, Synth, Exec (the four DSLs)
 - `Dialect { surface, kind, rules }` — one .synth file, surface-tagged
