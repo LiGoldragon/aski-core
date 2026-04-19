@@ -21,7 +21,7 @@
 
 ;; ── Surface (which file type this grammar describes) ────────
 
-(SurfaceKind Core Aski Synth Exec Ffi)
+(SurfaceKind Core Aski Synth Exec Rfi)
 
 
 ;; ── Leaf Enums (no data, Copy) ──────────────────────────────
@@ -37,7 +37,7 @@
 
 (TagKind
   ;; Aski root constructs
-  Module Enum Struct Newtype Const Ffi TraitDecl TraitImpl
+  Module Enum Struct Newtype Const Rfi TraitDecl TraitImpl
 
   ;; exec root
   Program
@@ -84,11 +84,11 @@
   ;; Self expression (v0.20)
   SelfRef
 
-  ;; FFI surface (v0.20)
-  FfiGroup
+  ;; RFI surface (v0.20)
+  RfiGroup
 
   ;; Misc leaf constructs
-  TypeAnnotation FieldInit MatchArm FfiFunction BoundedParam CallArgs
+  TypeAnnotation FieldInit MatchArm RfiFunction BoundedParam CallArgs
 
   ;; Lifetime / origin annotations (place-based, Rust-aligned)
   PlaceRef PlacePath PlaceUnion ViewType
@@ -108,7 +108,7 @@
 
 (LabelKind
   ;; Name declarations — root-level data defs
-  ModuleName EnumName StructName NewtypeName ConstName FfiName
+  ModuleName EnumName StructName NewtypeName ConstName RfiName
   TraitName VariantName FieldName MethodName SigName InstanceName
 
   ;; Short-form declarations
@@ -146,7 +146,7 @@
   Param Signature Method MethodBody
   TraitItem TraitImplItem
   Match Pattern Loop
-  IterationSource StructConstruct Ffi
+  IterationSource StructConstruct Rfi
   Origin FieldPath ViewType
   Program
   SynthRule SynthAlt SynthItem SynthLabel SynthCard)

@@ -34,15 +34,36 @@ askic       — uses synth-core (input) + aski-core (output)
 veric/semac — use aski-core / veri-core types
 ```
 
-## v0.19 Shape
+## v0.20 Shape
 
-- `SurfaceKind` — Core, Aski, Synth, Exec (the four DSLs)
+- `SurfaceKind` — Core, Aski, Synth, Exec, **Rfi** (v0.20 adds Rfi, 5 surfaces)
 - `Dialect { surface, kind, rules }` — one .synth file, surface-tagged
-- `DialectTree { dialects }` — flat Vec across all four DSLs
+- `DialectTree { dialects }` — flat Vec across all five surfaces
 - `Tag { kind: TagKind }` — output node type identifier (`#Tag#`)
 - `Label { binding, kind: LabelKind, casing }` — source-read role
   (`@`, `:`, `'` produce Declare, Reference, Origin bindings)
 - Cross-surface refs: `ItemContent::DialectRef { surface: Option<SurfaceKind>, target: DialectKind }`
+
+**v0.20 additions to TagKind:** AssociatedType, AssociatedTypeImpl,
+SelfAssocType, SelfRef, RfiGroup.
+
+**v0.20 additions to LabelKind:** AssociatedName. Retired: ExportedName.
+
+**v0.20 additions to DialectKind:** TraitItem, TraitImplItem.
+
+## ⚠️ `core/dialect.core` uses LEGACY fake-enum-TOC
+
+Line 15-19:
+```
+(Dialect
+  DialectTree Dialect Rule Alternative Item ItemContent
+  ...)
+```
+
+This is the legacy fake-enum-TOC form (same as aski-core .core files).
+v0.20 grammar supports a proper module header but corec's parser
+hasn't been updated yet. Migration is paired — corec + .core files
+together. Not blocking.
 
 ## Rust Style
 
