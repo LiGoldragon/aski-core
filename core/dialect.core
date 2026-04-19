@@ -75,7 +75,7 @@
   BlockBody MatchBody LoopBody IterBody StructBody
 
   ;; Type-expression variants
-  Named InstanceType AppliedType GenericParamType
+  Named AppliedType GenericParamType
   BorrowedType MutBorrowedType
 
   ;; Misc leaf constructs
